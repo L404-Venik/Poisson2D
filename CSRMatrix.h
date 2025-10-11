@@ -1,8 +1,10 @@
 ﻿#pragma once
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <stdexcept>
+#include <assert.h>
 
 struct Triplet 
 {
@@ -26,4 +28,10 @@ public:
 
     // Sparse matrix-vector multiply: y = A * x
     std::vector<double> VectorMultiply(const std::vector<double>& x) const;
+    std::vector<double> GetDiagonal() const;
+
+    bool is_symmetric(double tol = 1e-12) const;
+    void print(std::ofstream& OutStream) const;
 };
+
+double DotProduct(const std::vector<double>& x, const std::vector<double>& y);
