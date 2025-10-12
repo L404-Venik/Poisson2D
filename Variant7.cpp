@@ -71,30 +71,29 @@ void CreateMatrixesV7(CSRMatrix& A, std::vector<double>& f, __int64 M, __int64 N
 	f.clear();
 	f.resize(Nn * Mn, 0.0);
 
-	for (int i = N; i >= 0; i--) // from positive Y to negative
+	for (int i = 0; i <= M; i++) // from Negative X to positive
 	{
-		__int64 idx = N - i;
-		double Y_cur = Y_min + i * Y_step;
+		double X_cur = X_min + i * X_step;
 
-		for (int j = 0; j <= M; j++) // from negative X to positive
+		for (int j = 0; j <= N; j++) // from negative Y to positive
 		{
-			double X_cur = X_min + j * X_step;
+			double Y_cur = Y_min + j * Y_step;
 			// default assumption - inside D
 			a = b = 1.0;
-			f[idx * Mn + j] = 1.0;
+			f[i * Nn + j] = 1.0;
 
 			if (IsEdge(X_cur, Y_cur)) // Edge
 			{
-				if(IsOuterCorner(X_cur, Y_cur))
+				if (IsOuterCorner(X_cur, Y_cur))
 				{
 					a = b = 0.5 * (1.0 / EPS + 1.0);
 				}
-				else if (IsTopPart(X_cur,Y_cur) || IsBottomPart(X_cur, Y_cur) || (std::abs(Y_cur) < EPS && !IsLeftPart(X_cur, Y_cur)))
+				else if (IsTopPart(X_cur, Y_cur) || IsBottomPart(X_cur, Y_cur) || (std::abs(Y_cur) < EPS && !IsLeftPart(X_cur, Y_cur)))
 				{
 					a = 0.5 * (1.0 / EPS + 1.0);
 					b = 1.0;
 				}
-				else if (IsLeftPart(X_cur,Y_cur) || IsRightPart(X_cur, Y_cur) || (std::abs(X_cur) < EPS && !IsBottomPart(X_cur, Y_cur)))
+				else if (IsLeftPart(X_cur, Y_cur) || IsRightPart(X_cur, Y_cur) || (std::abs(X_cur) < EPS && !IsBottomPart(X_cur, Y_cur)))
 				{
 					a = 1.0;
 					b = 0.5 * (1.0 / EPS + 1.0);
@@ -109,37 +108,37 @@ void CreateMatrixesV7(CSRMatrix& A, std::vector<double>& f, __int64 M, __int64 N
 					b = 1 / EPS;
 				}
 
-				f[idx * Mn + j] = 0.5;
+				f[i * Nn + j] = 0.5;
 			}
 			else if (IsOutOfDomain(X_cur, Y_cur)) // Outside
 			{
 				a = b = 1.0 / EPS;
-				f[idx * Mn + j] = 0.0;
+				f[i * Nn + j] = 0.0;
 			}
 
-			if (idx > 0)
+			if (i > 0)
 			{
-				COO.push_back({ (idx - 1) * Mn + j ,(idx - 1) * Mn + j,  a * OneBy_h1 });
-				COO.push_back({ (idx - 1) * Mn + j ,idx * Mn + j,  -a * OneBy_h1 });
-				COO.push_back({ idx * Mn + j ,(idx - 1) * Mn + j,  -a * OneBy_h1 });
+				COO.push_back({ (i - 1) * Nn + j ,(i - 1) * Nn + j,  a * OneBy_h1 });
+				COO.push_back({ (i - 1) * Nn + j ,i * Nn + j,  -a * OneBy_h1 });
+				COO.push_back({ i * Nn + j ,(i - 1) * Nn + j,  -a * OneBy_h1 });
 			}
 
 			if (j > 0)
 			{
-				COO.push_back({ idx * Mn + j - 1 ,idx * Mn + j - 1,  b * OneBy_h2 });
-				COO.push_back({ idx * Mn + j - 1 ,idx * Mn + j,  -b * OneBy_h2 });
-				COO.push_back({ idx * Mn + j ,idx * Mn + j - 1,  -b * OneBy_h2 });
+				COO.push_back({ i * Nn + j - 1 ,i * Nn + j - 1,  b * OneBy_h2 });
+				COO.push_back({ i * Nn + j - 1 ,i * Nn + j,  -b * OneBy_h2 });
+				COO.push_back({ i * Nn + j ,i * Nn + j - 1,  -b * OneBy_h2 });
 			}
 
-			COO.push_back({ idx * Mn + j ,idx * Mn + j,  a * OneBy_h1 + b * OneBy_h2 });
+			COO.push_back({ i * Nn + j ,i * Nn + j,  a * OneBy_h1 + b * OneBy_h2 });
 		}
 	}
 
 	// Corners
-	f[0] = f[Mn / 2] = f[Nn / 2 * Mn + Mn - 1] = f[(Nn - 1) * Mn] = f[Nn * Mn - 1] = 0.25;
+	f[0] = f[Nn - 1] = f[Mn / 2 * Nn + Nn - 1] = f[(Mn - 1) * Nn] = f[Mn * Nn - Nn / 2 - 1] = 0.25;
 
 	// Center point
-	f[Nn / 2 * Mn + Mn / 2] = 0.75;
+	f[Mn / 2 * Nn + Nn / 2] = 0.75;
 
 	A = CSRMatrix::COO_To_CSR(COO, Nn * Mn, Nn * Mn);
 }
