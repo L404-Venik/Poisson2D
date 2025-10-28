@@ -1,9 +1,14 @@
 ﻿#include <omp.h>
 #include <iomanip>
 #include <cmath>
+#include <algorithm>
+#include <stdexcept>
+#include <assert.h>
 #include "CSRMatrix.h"
 
-CSRMatrix::CSRMatrix(__int64 r, __int64 c) : m_iRows(r), m_iCols(c)
+extern int NumThreads;
+
+CSRMatrix::CSRMatrix(int r, int c) : m_iRows(r), m_iCols(c)
 {
 	row_ptr.resize(r + 1, 0);
 
@@ -74,6 +79,43 @@ CSRMatrix CSRMatrix::COO_To_CSR(const std::vector<Triplet>& coo, int rows, int c
 	return A;
 }
 
+CSRMatrix CSRMatrix::COO_To_CSR(const std::unordered_map<std::pair<int, int>, double, PairHash>& entries, int rows, int cols)
+{
+	CSRMatrix A(rows, cols);
+	A.row_ptr.assign(rows + 1, 0);
+
+	// First pass: count nonzeros per row
+	for (auto& kv : entries) 
+	{
+		int i = kv.first.first;
+		A.row_ptr[i + 1]++;
+	}
+
+	// Prefix sum to get row_ptr
+	for (int i = 0; i < rows; i++) 
+		A.row_ptr[i + 1] += A.row_ptr[i];
+
+	// Allocate memory
+	int nnz = (int)entries.size();
+	A.values.resize(nnz);
+	A.col_index.resize(nnz);
+
+	// Second pass: fill data
+	std::vector<int> offset = A.row_ptr;
+	for (auto& kv : entries) 
+	{
+		int i = kv.first.first;
+		int j = kv.first.second;
+		double v = kv.second;
+
+		int idx = offset[i]++;
+		A.col_index[idx] = j;
+		A.values[idx] = v;
+	}
+
+	return A;
+}
+
 // Sparse matrix-vector multiply: y = A * x
 std::vector<double> CSRMatrix::VectorMultiply(const std::vector<double>& x) const
 {
@@ -82,7 +124,7 @@ std::vector<double> CSRMatrix::VectorMultiply(const std::vector<double>& x) cons
 
 	std::vector<double> y(m_iRows, 0.0);
 
-	//#pragma omp parallel for
+#pragma omp parallel for schedule(static)
 	for (int i = 0; i < m_iRows; i++)
 	{
 		double sum = 0.0;
@@ -180,7 +222,9 @@ double DotProduct(const std::vector<double>& x, const std::vector<double>& y)
 
 	double result = 0.0;
 	size_t n = x.size();
-	for (size_t i = 0; i < n; i++)
+
+#pragma omp parallel for reduction(+:result) schedule(static)
+	for (int i = 0; i < n; i++)
 		result += x[i] * y[i];
 
 	return result;

@@ -1,6 +1,8 @@
 #include "Variant7.h"
 #include <numeric>
 #include <limits>
+#include <float.h>
+#include <cmath>
 
 inline bool IsInnerCorner(double X, double Y)
 {
@@ -54,9 +56,9 @@ inline bool IsOutOfDomain(double X, double Y)
 	return (X > FLT_EPSILON) && (Y > FLT_EPSILON);
 }
 
-void CreateMatrixesV7(CSRMatrix& A, std::vector<double>& f, __int64 M, __int64 N) // Variant 7
+void CreateMatrixesV7(CSRMatrix& A, std::vector<double>& f, int M, int N) // Variant 7
 {
-	__int64 Nn = N + 1, Mn = M + 1; // grid nodes count
+	int Nn = N + 1, Mn = M + 1; // grid nodes count
 
 	double X_step, Y_step, a = 0.0, b = 0.0;
 	X_step = (X_max - X_min) / (double)M;

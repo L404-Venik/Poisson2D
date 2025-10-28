@@ -2,29 +2,38 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <algorithm>
-#include <stdexcept>
-#include <assert.h>
+#include <numeric>
+#include <unordered_map>
+#include <utility>
+
+struct PairHash 
+{
+	std::size_t operator()(const std::pair<int, int>& p) const noexcept 
+	{
+		return (static_cast<std::size_t>(p.first) << 32) ^ static_cast<std::size_t>(p.second);
+	}
+};
 
 struct Triplet
 {
-	__int64 row, col;
+	int row, col;
 	double value;
 };
 
 class CSRMatrix // Compressed sparse row Matrix class
 {
 public:
-	__int64 m_iRows, m_iCols;
+	int m_iRows, m_iCols;
 	std::vector<double> values;
-	std::vector<__int64> col_index;
-	std::vector<__int64> row_ptr;
+	std::vector<int> col_index;
+	std::vector<int> row_ptr;
 
 	CSRMatrix() :m_iRows(0), m_iCols(0) {};
-	CSRMatrix(__int64 r, __int64 c);
+	CSRMatrix(int r, int c);
 
 	// Convert COO → CSR
 	static CSRMatrix COO_To_CSR(const std::vector<Triplet>& coo, int rows, int cols);
+	static CSRMatrix COO_To_CSR(const std::unordered_map<std::pair<int, int>, double, PairHash>& entries, int rows, int cols);
 
 	// Sparse matrix-vector multiply: y = A * x
 	std::vector<double> VectorMultiply(const std::vector<double>& x) const;
