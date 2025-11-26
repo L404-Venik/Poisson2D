@@ -5,6 +5,8 @@
 #include <numeric>
 #include <unordered_map>
 #include <utility>
+#include <omp.h>
+
 
 struct PairHash 
 {
@@ -34,10 +36,17 @@ public:
 	// Convert COO → CSR
 	static CSRMatrix COO_To_CSR(const std::vector<Triplet>& coo, int rows, int cols);
 	static CSRMatrix COO_To_CSR(const std::unordered_map<std::pair<int, int>, double, PairHash>& entries, int rows, int cols);
+	static CSRMatrix Laplace_to_CSR(const std::vector<double>& a, const std::vector<double>& b, int Mn, int Nn);
 
 	// Sparse matrix-vector multiply: y = A * x
 	std::vector<double> VectorMultiply(const std::vector<double>& x) const;
+	double* VectorMultiply(double* x) const;
 	std::vector<double> GetDiagonal() const;
+	double* GetDiagonalPtr() const;
+
+	// Serialization
+	std::vector<char> Serialize() const;
+	void Deserialize(const std::vector<char>& buffer);
 
 	bool is_symmetric(double tol = 1e-12) const;
 	void print(std::ofstream& OutStream) const;
@@ -45,4 +54,6 @@ public:
 
 
 double DotProduct(const std::vector<double>& x, const std::vector<double>& y);
+double DotProduct(const double* x, const double* y, int n);
 void PrintFlatMatrix(std::ofstream& output, const std::vector<double>& matrix, int N, int M);
+void PrintFlatMatrix(const std::string& sFileName, const std::vector<double>& matrix, int N, int M);
